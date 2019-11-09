@@ -169,17 +169,19 @@ use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 
 impl<'r> Responder<'r> for Error {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
-        let usr_msg = format!("{}", self);
-        error!("{:#?}", self);
+    fn respond_to(self, _: &'r Request<'_>) -> response::ResultFuture<'r> {
+        Box::pin(async move {
+            let usr_msg = format!("{}", self);
+            error!("{:#?}", self);
 
-        let code = Status::from_code(self.error_code).unwrap_or(Status::BadRequest);
+            let code = Status::from_code(self.error_code).unwrap_or(Status::BadRequest);
 
-        Response::build()
-            .status(code)
-            .header(ContentType::JSON)
-            .sized_body(Cursor::new(usr_msg))
-            .ok()
+            Response::build()
+                .status(code)
+                .header(ContentType::JSON)
+                .sized_body(Cursor::new(usr_msg))
+                .ok()
+        })
     }
 }
 
